@@ -18,7 +18,7 @@ variable "xnat_plugins_list" {
   default = [
     "container-service-3.0.0-fat.jar",
     "ldap-auth-plugin-1.1.0.jar",
-    "openid-auth-plugin-1.0.2.jar",
+    "openid-auth-plugin-1.1.1.jar",
     "ohif-viewer-3.0.1-XNAT-1.8.0.jar"
   ]
   type = list(string)
@@ -53,15 +53,7 @@ build {
       "xnat-web-${var.xnat_version}.war",
       "packer_files"
     ]
-    only = ["docker.xnat"]
-  }
-  provisioner "file" {
-    destination = "/tmp/"
-    sources = [
-      "xnat-web-1.7.6.war",
-      "packer_files"
-    ]
-    only = ["docker.xnat17"]
+    only = ["docker.xnat-web"]
   }
 
   provisioner "file" {
@@ -77,10 +69,7 @@ build {
       "docker-entrypoint.sh",
       "docker-entrypoint.d"
     ]
-    only = [
-      "docker.xnat",
-      "docker.xnat17"
-    ]
+    only = [ "docker.xnat-web" ]
   }
 
   provisioner "shell" {
@@ -103,35 +92,26 @@ build {
 
   post-processors {
     post-processor "docker-tag" {
-      repository =  "ghcr.io/australian-imaging-service/xnat-web"
-      tags = ["${var.xnat_version}-dev"]
-      only = ["docker.xnat"]
+      repository =  "ghcr.io/australian-imaging-service/${source.name}"
+      tags = ["${var.xnat_version}"]
+      only = ["docker.xnat-web"]
     }
+    #post-processor "docker-push" { only = ["docker.xnat-web"]}
+  }
+  post-processors {
     post-processor "docker-tag" {
-      repository =  "localhost:32000/xnat-web"
-      tags = ["${var.xnat_version}-dev"]
-      only = ["docker.xnat"]
+      repository =  "localhost:32000/${source.name}"
+      tags = ["${var.xnat_version}"]
+      only = ["docker.xnat-web"]
     }
-    post-processor "docker-tag" {
-      repository =  "ghcr.io/australian-imaging-service/xnat-web"
-      tags = ["1.7.6"]
-      only = ["docker.xnat17"]
-    }
-    post-processor "docker-tag" {
-      repository = "localhost:32000/xnat-web"
-      tags = ["1.7.6"]
-      only = ["docker.xnat17"]
-    }
-    #post-processor "docker-push" {only = ["docker.xnat","docker.xnat17"]}
   }
 
   sources = [
-    "source.docker.xnat",
-    "source.docker.xnat17"
+    "source.docker.xnat-web"
   ]
 }
 
-source "docker" "xnat" {
+source "docker" "xnat-web" {
   changes = [
     "CMD [\"bin/catalina.sh\",\"run\"]",
     "ENTRYPOINT [\"/docker-entrypoint.sh\"]",
@@ -143,15 +123,4 @@ source "docker" "xnat" {
   ]
   commit = true
   image = var.docker_image
-}
-source "docker" "xnat17" {
-  changes = [
-    "CMD [\"bin/catalina.sh\",\"run\"]",
-    "ENTRYPOINT [\"/docker-entrypoint.sh\"]",
-    "ENV XNAT_HOME=${var.xnat_home}",
-    "LABEL maintainer=\"Dean Taylor <dean.taylor@uwa.edu.au>\"",
-    "VOLUME ${var.xnat_root}/archive ${var.xnat_root}/cache ${var.xnat_root}/prearchive ${var.xnat_home}/work"
-  ]
-  commit = true
-  image = "tomcat:7.0-jdk8-openjdk-buster"
 }
