@@ -4,12 +4,14 @@ name: Packer build
 on:
   push:
     branches:
-      - main
+      - 1.7
+      - 1.8
     paths:
       - "**.pkr.hcl"
   pull_request:
     branches:
-      - main
+      - 1.7
+      - 1.8
     paths:
       - "**.pkr.hcl"
 
@@ -56,7 +58,7 @@ jobs:
           CHANGED_FILES=$(git diff --name-only ${{github.event.before}}..${{github.event.after}} |grep '\.pkr\.hcl$')
           for FILE in "${CHANGED_FILES[@]}"; do
           packer validate -syntax-only "${FILE}"
-          [[ $? -eq 0 ]] && packer build -color=false -on-error=abort "${FILE}"
+          [[ $? -eq 0 ]] && packer build -color=false -on-error=abort -only=docker.* "${FILE}"
           done
         env:
           PACKER_LOG: 1
