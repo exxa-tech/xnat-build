@@ -119,7 +119,7 @@ source "docker" "xnat-web" {
     "LABEL maintainer=\"Dean Taylor <dean.taylor@uwa.edu.au>\"",
     "LABEL org.opencontainers.image.source https://github.com/australian-imaging-service/xnat-build",
     "USER ${var.run_as_uid}",
-    "VOLUME ${var.xnat_root}/archive ${var.xnat_root}/cache ${var.xnat_root}/prearchive ${var.xnat_home}/work"
+    "VOLUME ${var.xnat_root}/archive ${var.xnat_root}/prearchive"
   ]
   commit = true
   image = var.docker_image
