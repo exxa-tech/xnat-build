@@ -30,7 +30,7 @@ variable "run_as_uid" {
   type = string
 }
 variable "docker_image" {
-  default = "tomcat:9.0.46-jdk8-openjdk-buster"
+  default = "tomcat:9-jdk8-openjdk-buster"
   type = string
 }
 
@@ -82,7 +82,13 @@ build {
       "unzip -o -d $${CATALINA_HOME}/webapps/ROOT /tmp/xnat-web-*.war",
       "sed -i 's/ch.qos.logback.core.rolling.RollingFileAppender/ch.qos.logback.core.ConsoleAppender/' $${CATALINA_HOME}/webapps/ROOT/WEB-INF/classes/logback.xml",
       "cp /tmp/packer_files/setenv.sh $${CATALINA_HOME}/bin/setenv.sh && chmod 0555 $${CATALINA_HOME}/bin/setenv.sh",
+      "cp /tmp/packer_files/mq.png $${CATALINA_HOME}/webapps/ROOT/images/mq.png && chmod 0644 $${CATALINA_HOME}/webapps/ROOT/images/mq.png",
+      "cp /tmp/packer_files/key.pem $${CATALINA_HOME}/certs/key.pem && chmod 0644 $${CATALINA_HOME}/certs/key.pem",
+      "cp /tmp/packer_files/cert.pem $${CATALINA_HOME}/certs/cert.pem && chmod 0644 $${CATALINA_HOME}/certs/cert.pem",
+      "cp /tmp/packer_files/ca.pem $${CATALINA_HOME}/certs/ca.pem && chmod 0644 $${CATALINA_HOME}/certs/ca.pem",
       "find ${var.xnat_home}/config ${var.xnat_plugins} -type d -exec chmod 0755 {} \\; && find ${var.xnat_plugins} -type f -exec chmod 0644 {} \\;",
+      "rm -f $${CATALINA_HOME}/webapps/ROOT/WEB-INF/lib/dicom-xnat-mx-1.8.3.jar",
+      "cp /tmp/packer_files/dicom-xnat-mx-1.8.2.jar $${CATALINA_HOME}/webapps/ROOT/WEB-INF/lib/dicom-xnat-mx-1.8.2.jar && chmod 0644 $${CATALINA_HOME}/webapps/ROOT/WEB-INF/lib/dicom-xnat-mx-1.8.2.jar",
       # Set local account as owner of XNAT config, plugins and Tomcat directories
       "chown -R ${var.run_as_uid}:${var.run_as_uid} ${var.xnat_home}/config ${var.xnat_plugins} $${CATALINA_HOME}",
       "[ -f /docker-entrypoint.sh ] && chmod 0755 /docker-entrypoint.sh",
@@ -94,7 +100,7 @@ build {
 
   post-processors {
     post-processor "docker-tag" {
-      repository =  "ghcr.io/australian-imaging-service/${source.name}"
+      repository =  "archetype/${source.name}"
       tags = ["${var.xnat_version}"]
       only = ["docker.xnat-web"]
     }
@@ -118,7 +124,7 @@ source "docker" "xnat-web" {
     "CMD [\"bin/catalina.sh\",\"run\"]",
     "ENTRYPOINT [\"/docker-entrypoint.sh\"]",
     "ENV XNAT_HOME=${var.xnat_home}",
-    "LABEL maintainer=\"Dean Taylor <dean.taylor@uwa.edu.au>\"",
+    "LABEL maintainer=\"Alastair Ferguson <alastair.ferguson@exxa.tech\"",
     "LABEL org.opencontainers.image.source https://github.com/australian-imaging-service/xnat-build",
     "USER ${var.run_as_uid}",
     "VOLUME ${var.xnat_root}/archive ${var.xnat_root}/cache ${var.xnat_root}/prearchive ${var.xnat_home}/work"
